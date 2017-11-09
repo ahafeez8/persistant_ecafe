@@ -8,17 +8,23 @@ public class cafe {
 	public static void main(String args[]){  
 			
 		try{  
+			//initializing connection
 		Scanner in = new Scanner(System.in);
 		Class.forName("com.mysql.jdbc.Driver");  
 		Connection con=DriverManager.getConnection(  
-		"jdbc:mysql://localhost/ecafe","test","");  
+		"jdbc:mysql://localhost/ecafe","test",""); 
 		
+		//prepared statement for insertion 
+		String prep_stmt = "INSERT INTO item_list (s_num, i_name, i_type, price) VALUES (?,?,?,?)";
 		Statement stmt=con.createStatement();  
+		PreparedStatement stmt2 = con.prepareStatement(prep_stmt);
 		
+		//setting up cafe 
 		System.out.println("Welcome to the E-Cafe");
 		System.out.println("===========================================================================");
 		System.out.println("S#   Name                     Type                      Price ");
 		System.out.println("===========================================================================");
+		
 		//create items for menu
 		items[] i = new items[16];
 		i[0] = new items(0, "Curly Fries", "Appetizer", 250);
@@ -47,15 +53,20 @@ public class cafe {
 		}
 		//insert info of all items to item list table
 		x = 0;
+		//Prepared statement exeuction for insertion
 		while(x < i.length)
 		{
-		stmt.executeUpdate("INSERT INTO item_list " + "VALUES ("+i[x].s_num+",'"+i[x].name+"', '"+i[x].type+"',"+ i[x].price+")");
+		//stmt.executeUpdate("INSERT INTO item_list " + "VALUES ("+i[x].s_num+",'"+i[x].name+"', '"+i[x].type+"',"+ i[x].price+")");
+		stmt2.setInt(1, i[x].s_num);
+		stmt2.setString(2, i[x].name);
+		stmt2.setString(3, i[x].type);
+		stmt2.setInt(4, i[x].price);
 		x++;
 		}
-		
-		customer[] cust = new customer[2];
-		orders[] ord = new orders[2];
-		for(int a = 0; a < 2; a++)
+		//increase number of customers from 1 to more
+		customer[] cust = new customer[1];
+		orders[] ord = new orders[1];
+		for(int a = 0; a < 1; a++)
 		{
 		//cust info taken 
 		System.out.println("Please Enter your name: ");
@@ -115,9 +126,9 @@ public class cafe {
 		{	
 			stmt.executeUpdate("INSERT INTO order_items " + "VALUES ("+oid+","+cid+", '"+i[picks.get(b)].name+"',"+i[picks.get(b)].price+",'"+cust[a].address+"')");
 		}
-		System.out.println("Order Receipt:");
+		/*System.out.println("Order Receipt:");
 		
-		ResultSet rs2 = stmt.executeQuery("Select del_type, total from orders");
+		ResultSet rs2 = stmt.executeQuery("Select o_id, cid, item_name, price, del_type, total from order_items as oi, orders as o where o.o_id like oi.o_id");
 		System.out.println("Order ID: " + ord[a].o_id);
 		System.out.println("Customer ID: " +cust[a].id);
 		
@@ -126,18 +137,38 @@ public class cafe {
 			if(rs2.getInt(1) == 0 )
 				System.out.print("Order Type: Home delievery");
 			else
-				System.out.print("Order Type: Self Pickup");
-			System.out.println("Your total bill: " + rs2.getInt(2));
+				System.out.print("Order Type: Self Pickup");					
+				System.out.println(rs2.getString(3)+"          "+rs2.getString(4));
+				System.out.println("Your total bill: " + rs2.getInt(2));
+		}*/
 		}
-		ResultSet rs=stmt.executeQuery("select o_id, cid, item_name, price from order_items ");
-		System.out.println("Items          Price");
-		while(rs.next())
-				System.out.println(rs.getString(3)+"          "+rs.getString(4));
-		
-			
-		
+		//Prepared statements for select Query : 1
+		PreparedStatement stmt3 = con.prepareStatement("Select o_id from orders where del_type=?");
+		stmt3.setInt(1, 0);
+		ResultSet rs3 = stmt3.executeQuery();
+		System.out.println("Orders to be delievered: ");
+		while(rs3.next())
+		{
+			System.out.println(rs3.getInt(1));
 		}
-	
+		
+		//Prepared statements for select Query : 2
+				PreparedStatement stmt4 = con.prepareStatement("Select i_name from item_list where i_type=?");
+				stmt4.setString(1, "Appetizer");
+				ResultSet rs4 = stmt4.executeQuery();
+				System.out.println("Items present in appetizers are: ");
+				while(rs4.next())
+				{
+					System.out.println(rs4.getString(1));
+				}
+		//callable statements
+		CallableStatement cs = con.prepareCall("{call selected_items('541')}");
+		ResultSet rs5 = cs.executeQuery();
+		while(rs5.next())
+		{
+			System.out.println(x);
+		}
+		
 		
 		con.close();  
 		}
